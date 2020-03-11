@@ -3,8 +3,7 @@ package main
 import (
 	"fmt"
 
-	//"../network/bcast"
-	"../network/peers"
+	"../network/bcast"
 )
 
 type Message struct {
@@ -12,28 +11,15 @@ type Message struct {
 	Id   int
 }
 
-type Receipt bool
-
 func main() {
-	id = "2"
-	recChn := make(chan bool)
-	receiptChn := make(chan peers.PeerUpdate)
-	//recChn := make(chan Message)
-	//receiptChn := make(chan Receipt)
+	recChn := make(chan Message)
 
-	go peers.Receiver(16571, recChn)
-	go peers.Transmitter(16573, id, receiptChn)
+	go bcast.Receiver(16571, recChn)
 
-	fmt.Printf("heihei")
-	myPeer := peers.PeerUpdate{"", "2", ""}
 	for {
 		select {
 		case incomming := <-recChn:
 			fmt.Printf("Received: %#v\n", incomming)
-			go func() {
-				receiptChn <- true
-				fmt.Printf("Receipt sent")
-			}()
 		}
 	}
 
