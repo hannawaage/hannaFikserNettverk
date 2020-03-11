@@ -49,11 +49,11 @@ func main() {
 	for {
 		select {
 		case incomming := <-recChn:
-			if !incomming.Receipt && (incomming.LocalIP == localIP) {
-				fmt.Printf("Received: %#v\n", incomming.Note)
+			if !incomming.Receipt && (incomming.LocalIP != localIP) {
+				fmt.Printf("Received: %#v\n", incomming.Note, incomming.Id)
 				msg := Message{"This is a receipt of message ", incomming.Id, true, localIP}
 				sendChn <- msg
-			} else {
+			} else if incomming.LocalIP != localIP {
 				fmt.Printf("Received receipt on message %#v\n", incomming.Id, incomming.LocalIP)
 			}
 			/*case r := <-recReceiptCh:
