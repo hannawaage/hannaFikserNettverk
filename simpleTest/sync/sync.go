@@ -66,30 +66,44 @@ func Sync(id string, ch SyncChns) {
 	for {
 		select {
 		case incomming := <-ch.RecChn:
-			if id != incomming.LocalID { //Hvis det ikke er fra oss selv
-				if !contains(onlineIPs, incomming.LocalIP) {
+			recID := incomming.LocalID
+			if id != recID { //Hvis det ikke er fra oss selv, BYTTES TIL IP VED KJØRING PÅ FORSKJELLIGE MASKINER
+				if !contains(onlineIPs, recID) {
 					// Dersom heisen enda ikke er registrert, sjekker vi om vi nå er online og sjekker om vi er master
-					onlineIPs = append(onlineIPs, incomming.LocalIP)
+					onlineIPs = append(onlineIPs, recID)
 					if len(onlineIPs) == numPeers {
 						//online = true
 						fmt.Println("Yaho, we are online!")
-						localDig, _ := strconv.Atoi(localIP[len(localIP)-3:])
+						idDig, _ := strconv.Atoi(id)
 						for i := 0; i <= numPeers; i++ {
-							theIP := onlineIPs[i]
-							lastDig, _ := strconv.Atoi(theIP[len(theIP)-3:])
-							if localDig < lastDig {
+							theID, _ := strconv.Atoi(onlineIPs[i])
+							if idDig < theID {
 								iAmMaster = false
 								break
 							}
 						}
+						/*
+							Dette er ved diff på IP:
+							localDig, _ := strconv.Atoi(localIP[len(localIP)-3:])
+							for i := 0; i <= numPeers; i++ {
+								theIP := onlineIPs[i]
+								lastDig, _ := strconv.Atoi(theIP[len(theIP)-3:])
+								if localDig < lastDig {
+									iAmMaster = false
+									break
+								}
+							}
+						*/
 						if iAmMaster {
 							fmt.Println("I am master")
+						} else {
+							fmt.Println("I am backup")
 						}
 					}
 				}
 				if !incomming.Receipt {
 					// Hvis det ikke er en kvittering, skal vi svare med kvittering
-					fmt.Println("Received message from %d \n", incomming.LocalID)
+					//fmt.Println("Received message from %d \n", incomming.LocalID)
 					msg := Message{elev, incomming.MsgId, true, localIP, id}
 					//sender ut fem kvitteringer på fem millisekunder
 					for i := 0; i < 5; i++ {
@@ -98,7 +112,7 @@ func Sync(id string, ch SyncChns) {
 					}
 				} else { //Hvis det er en kvittering, skal vi stoppe tilhørende timer
 					//msgTimer.Stop()
-					fmt.Println("Bare Test")
+					//fmt.Println("Bare Test")
 				}
 			}
 
