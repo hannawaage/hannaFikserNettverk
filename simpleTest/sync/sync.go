@@ -50,14 +50,16 @@ func Sync(id string, ch SyncChns) {
 		msg := Message{elev, randNr, false, localIP, id}
 		for {
 			ch.SendChn <- msg
-			msgTimer := time.NewTimer(5 * time.Second)
+			//msgTimer := time.NewTimer(5 * time.Second)
 			time.Sleep(1 * time.Second)
-			go func() {
-				msgRec := <-ch.timerConf
-				if msgRec == randNr {
-					msgTimer.Stop()
-				}
-			}()
+			/*
+				go func() {
+					msgRec := <-ch.timerConf
+					if msgRec == randNr {
+						msgTimer.Stop()
+					}
+				}()
+			*/
 		}
 	}()
 
