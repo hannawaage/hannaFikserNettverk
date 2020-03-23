@@ -144,7 +144,7 @@ func OrdersDist(ch SyncChns) {
 			case b := <-ch.Online:
 				if b {
 					online = true
-					fmt.Println("Yaho, we are online!")
+					fmt.Println("We are online!")
 				} else {
 					online = false
 					fmt.Println("Boo, we are offline.")
