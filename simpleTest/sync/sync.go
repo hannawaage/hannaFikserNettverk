@@ -127,7 +127,7 @@ func Sync(id string, ch SyncChns) {
 	}
 }
 
-func syncOrders(ch SyncChns) {
+func OrdersDist(ch SyncChns) {
 	var (
 		online bool //initiates to false
 	)
