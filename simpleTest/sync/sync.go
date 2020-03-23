@@ -131,6 +131,7 @@ func Sync(id string, ch SyncChns) {
 			if numTimeouts > 2 {
 				ch.Online <- false
 				fmt.Println("Three timeouts in a row")
+				numTimeouts = 0
 			}
 		}
 	}
