@@ -132,6 +132,7 @@ func Sync(id string, ch SyncChns) {
 				ch.Online <- false
 				fmt.Println("Three timeouts in a row")
 				numTimeouts = 0
+				onlineIPs = onlineIPs[:0]
 			}
 		}
 	}
