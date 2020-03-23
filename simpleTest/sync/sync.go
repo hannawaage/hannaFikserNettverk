@@ -23,10 +23,9 @@ type Message struct {
 }
 
 type SyncChns struct {
-	SendChn     chan Message
-	RecChn      chan Message
-	onlineElevs chan []string
-	timerConf   chan int
+	SendChn chan Message
+	RecChn  chan Message
+	online  chan bool
 }
 
 func Sync(id string, ch SyncChns) {
@@ -36,7 +35,8 @@ func Sync(id string, ch SyncChns) {
 	var (
 		iAmMaster bool = true
 		//online    bool //boolean initiates to false
-		onlineIPs []string
+		onlineIPs    []string
+		currentMsgId int
 	)
 
 	localIP, err := localip.LocalIP()
@@ -45,12 +45,15 @@ func Sync(id string, ch SyncChns) {
 		localIP = "DISCONNECTED"
 	}
 
+	msgTimer := time.NewTimer(5 * time.Second)
+	msgTimer.Stop()
+
 	go func() {
-		randNr := rand.Intn(256)
-		msg := Message{elev, randNr, false, localIP, id}
+		currentMsgId := rand.Intn(256)
+		msg := Message{elev, currentMsgId, false, localIP, id}
 		for {
 			ch.SendChn <- msg
-			//msgTimer := time.NewTimer(5 * time.Second)
+			msgTimer.Reset(5 * time.Second)
 			time.Sleep(1 * time.Second)
 			/*
 				go func() {
@@ -72,8 +75,7 @@ func Sync(id string, ch SyncChns) {
 					// Dersom heisen enda ikke er registrert, sjekker vi om vi nå er online og sjekker om vi er master
 					onlineIPs = append(onlineIPs, recID)
 					if len(onlineIPs) == numPeers {
-						//online = true
-						fmt.Println("Yaho, we are online!")
+						ch.online <- true
 						idDig, _ := strconv.Atoi(id)
 						for i := 0; i < numPeers; i++ {
 							theID, _ := strconv.Atoi(onlineIPs[i])
@@ -110,31 +112,45 @@ func Sync(id string, ch SyncChns) {
 						ch.SendChn <- msg
 						time.Sleep(1 * time.Millisecond)
 					}
-				} else { //Hvis det er en kvittering, skal vi stoppe tilhørende timer
+				} else {
+					if incomming.MsgId == currentMsgId {
+						msgTimer.Stop()
+					}
+					//Hvis det er en kvittering, skal vi stoppe tilhørende timer
 					//msgTimer.Stop()
 					//fmt.Println("Bare Test")
 				}
 			}
-
+		case <-msgTimer.C:
+			ch.online <- false
 		}
 	}
+}
 
-	/*
-
-		if !contains(live, incomming.LocalID) { //Denne må byttes til IP når vi kjører på forskjellige
-					live = append(live, incomming.LocalIP)
-					ch.onlineElevs <- live
-					if len(live) == numPeers {
-						go func() { ch.online <- true }()
-					}
+func syncOrders(ch SyncChns) {
+	var (
+		online bool //initiates to false
+	)
+	go func() {
+		for {
+			select {
+			case b := <-ch.online:
+				if b {
+					online = true
+					fmt.Println("Yaho, we are online!")
+				} else {
+					online = false
+					fmt.Println("Boo, we are offline.")
 				}
-
-			case <-ch.online:
-				fmt.Println("We are online")
-
-			Finn ut om vi er online ved å sjekke IP på mottatte meldinger. Hvis vi har to
-			forskjellige IP-er så er vi online, og da er den med lavest IP master
-	*/
+			}
+		}
+	}()
+	for {
+		if online {
+			fmt.Println("Online")
+			time.Sleep(5 * time.Second)
+		}
+	}
 
 }
 
