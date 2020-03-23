@@ -11,6 +11,7 @@ func main() {
 	syncChns := sync.SyncChns{
 		SendChn: make(chan sync.Message),
 		RecChn:  make(chan sync.Message),
+		online: make(chan bool)
 	}
 
 	var id string

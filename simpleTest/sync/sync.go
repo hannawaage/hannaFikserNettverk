@@ -35,8 +35,9 @@ func Sync(id string, ch SyncChns) {
 	var (
 		iAmMaster bool = true
 		//online    bool //boolean initiates to false
-		onlineIPs    []string
-		currentMsgId int
+		onlineIPs       []string
+		receivedReceipt []string
+		currentMsgID    int
 	)
 
 	localIP, err := localip.LocalIP()
@@ -49,11 +50,11 @@ func Sync(id string, ch SyncChns) {
 	msgTimer.Stop()
 
 	go func() {
-		currentMsgId := rand.Intn(256)
-		msg := Message{elev, currentMsgId, false, localIP, id}
+		currentMsgID = rand.Intn(256)
+		msg := Message{elev, currentMsgID, false, localIP, id}
 		for {
 			ch.SendChn <- msg
-			msgTimer.Reset(5 * time.Second)
+			msgTimer.Reset(100 * time.Millisecond)
 			time.Sleep(1 * time.Second)
 			/*
 				go func() {
@@ -112,17 +113,21 @@ func Sync(id string, ch SyncChns) {
 						ch.SendChn <- msg
 						time.Sleep(1 * time.Millisecond)
 					}
-				} else {
-					if incomming.MsgId == currentMsgId {
-						msgTimer.Stop()
+				} else { // Hvis det er en kvittering
+					if incomming.MsgId == currentMsgID {
+						if !contains(receivedReceipt, recID) {
+							receivedReceipt = append(receivedReceipt, recID)
+							if len(receivedReceipt) == numPeers {
+								msgTimer.Stop()
+								receivedReceipt = receivedReceipt[:0]
+							}
+						}
 					}
-					//Hvis det er en kvittering, skal vi stoppe tilhørende timer
-					//msgTimer.Stop()
-					//fmt.Println("Bare Test")
 				}
 			}
 		case <-msgTimer.C:
 			ch.online <- false
+			fmt.Println("Timer timeout")
 		}
 	}
 }
