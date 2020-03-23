@@ -75,7 +75,7 @@ func Sync(id string, ch SyncChns) {
 						//online = true
 						fmt.Println("Yaho, we are online!")
 						idDig, _ := strconv.Atoi(id)
-						for i := 0; i <= numPeers; i++ {
+						for i := 0; i < numPeers; i++ {
 							theID, _ := strconv.Atoi(onlineIPs[i])
 							if idDig > theID {
 								iAmMaster = false
