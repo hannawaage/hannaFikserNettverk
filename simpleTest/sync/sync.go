@@ -38,6 +38,7 @@ func Sync(id string, ch SyncChns) {
 		onlineIPs       []string
 		receivedReceipt []string
 		currentMsgID    int
+		numTimeouts     int
 	)
 
 	localIP, err := localip.LocalIP()
@@ -54,7 +55,7 @@ func Sync(id string, ch SyncChns) {
 		msg := Message{elev, currentMsgID, false, localIP, id}
 		for {
 			ch.SendChn <- msg
-			msgTimer.Reset(1 * time.Second)
+			msgTimer.Reset(800 * time.Millisecond)
 			time.Sleep(1 * time.Second)
 			/*
 				go func() {
@@ -117,6 +118,7 @@ func Sync(id string, ch SyncChns) {
 						if !contains(receivedReceipt, recID) {
 							receivedReceipt = append(receivedReceipt, recID)
 							if len(receivedReceipt) == numPeers {
+								numTimeouts = 0
 								msgTimer.Stop()
 								receivedReceipt = receivedReceipt[:0]
 							}
@@ -125,8 +127,11 @@ func Sync(id string, ch SyncChns) {
 				}
 			}
 		case <-msgTimer.C:
-			ch.Online <- false
-			fmt.Println("Timer timeout")
+			numTimeouts++
+			if numTimeouts > 2 {
+				ch.Online <- false
+				fmt.Println("Three timeouts in a row")
+			}
 		}
 	}
 }
@@ -155,7 +160,6 @@ func OrdersDist(ch SyncChns) {
 			time.Sleep(5 * time.Second)
 		}
 	}
-
 }
 
 func contains(elevs []string, str string) bool {
