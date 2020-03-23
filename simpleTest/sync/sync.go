@@ -25,7 +25,7 @@ type Message struct {
 type SyncChns struct {
 	SendChn chan Message
 	RecChn  chan Message
-	online  chan bool
+	Online  chan bool
 }
 
 func Sync(id string, ch SyncChns) {
@@ -76,7 +76,7 @@ func Sync(id string, ch SyncChns) {
 					// Dersom heisen enda ikke er registrert, sjekker vi om vi nå er online og sjekker om vi er master
 					onlineIPs = append(onlineIPs, recID)
 					if len(onlineIPs) == numPeers {
-						ch.online <- true
+						ch.Online <- true
 						idDig, _ := strconv.Atoi(id)
 						for i := 0; i < numPeers; i++ {
 							theID, _ := strconv.Atoi(onlineIPs[i])
@@ -126,7 +126,7 @@ func Sync(id string, ch SyncChns) {
 				}
 			}
 		case <-msgTimer.C:
-			ch.online <- false
+			ch.Online <- false
 			fmt.Println("Timer timeout")
 		}
 	}
@@ -139,7 +139,7 @@ func OrdersDist(ch SyncChns) {
 	go func() {
 		for {
 			select {
-			case b := <-ch.online:
+			case b := <-ch.Online:
 				if b {
 					online = true
 					fmt.Println("Yaho, we are online!")
