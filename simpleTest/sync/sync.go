@@ -54,7 +54,7 @@ func Sync(id string, ch SyncChns) {
 		msg := Message{elev, currentMsgID, false, localIP, id}
 		for {
 			ch.SendChn <- msg
-			msgTimer.Reset(1 * time.Millisecond)
+			msgTimer.Reset(1 * time.Second)
 			time.Sleep(1 * time.Second)
 			/*
 				go func() {
