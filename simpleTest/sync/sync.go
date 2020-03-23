@@ -3,6 +3,7 @@ package sync
 import (
 	"fmt"
 	"math/rand"
+	"strconv"
 	"time"
 
 	"../network/localip"
@@ -25,12 +26,18 @@ type SyncChns struct {
 	SendChn     chan Message
 	RecChn      chan Message
 	onlineElevs chan []string
-	online      chan string
+	timerConf   chan int
 }
 
 func Sync(id string, ch SyncChns) {
-	numPeers := 2 //Burde ligge i config
+	const numPeers = 2 //Burde ligge i config
 	elev := Elevator{3, 0}
+
+	var (
+		iAmMaster bool = true
+		//online    bool //boolean initiates to false
+		onlineIPs []string
+	)
 
 	localIP, err := localip.LocalIP()
 	if err != nil {
@@ -45,15 +52,42 @@ func Sync(id string, ch SyncChns) {
 			ch.SendChn <- msg
 			msgTimer := time.NewTimer(5 * time.Second)
 			time.Sleep(1 * time.Second)
+			go func() {
+				msgRec := <-ch.timerConf
+				if msgRec == randNr {
+					msgTimer.Stop()
+				}
+			}()
 		}
 	}()
 
 	for {
 		select {
 		case incomming := <-ch.RecChn:
-			if id != incomming.LocalID {
-				if !incomming.Receipt { //Hvis det ikke er en kvittering, skal vi svare med kvittering
-					fmt.Println("Received message from ", incomming.LocalID)
+			if id != incomming.LocalID { //Hvis det ikke er fra oss selv
+				if !contains(onlineIPs, incomming.LocalIP) {
+					// Dersom heisen enda ikke er registrert, sjekker vi om vi nå er online og sjekker om vi er master
+					onlineIPs = append(onlineIPs, incomming.LocalIP)
+					if len(onlineIPs) == numPeers {
+						//online = true
+						fmt.Println("Yaho, we are online!")
+						localDig, _ := strconv.Atoi(localIP[len(localIP)-3:])
+						for i := 0; i <= numPeers; i++ {
+							theIP := onlineIPs[i]
+							lastDig, _ := strconv.Atoi(theIP[len(theIP)-3:])
+							if localDig < lastDig {
+								iAmMaster = false
+								break
+							}
+						}
+						if iAmMaster {
+							fmt.Println("I am master")
+						}
+					}
+				}
+				if !incomming.Receipt {
+					// Hvis det ikke er en kvittering, skal vi svare med kvittering
+					fmt.Println("Received message from %d \n", incomming.LocalID)
 					msg := Message{elev, incomming.MsgId, true, localIP, id}
 					//sender ut fem kvitteringer på fem millisekunder
 					for i := 0; i < 5; i++ {
@@ -61,26 +95,29 @@ func Sync(id string, ch SyncChns) {
 						time.Sleep(1 * time.Millisecond)
 					}
 				} else { //Hvis det er en kvittering, skal vi stoppe tilhørende timer
-					msgTimer.Stop()
+					//msgTimer.Stop()
+					fmt.Println("Bare Test")
 				}
 			}
 
-			if !contains(live, incomming.LocalID) { //Denne må byttes til IP når vi kjører på forskjellige
-				live = append(live, incomming.LocalIP)
-				ch.onlineElevs <- live
-				if len(live) == numPeers {
-					go func() { ch.online <- true }()
-				}
-			}
-
-		case <-ch.online:
-			fmt.Println("We are online")
 		}
 	}
 
 	/*
-		Finn ut om vi er online ved å sjekke IP på mottatte meldinger. Hvis vi har to
-		forskjellige IP-er så er vi online, og da er den med lavest IP master
+
+		if !contains(live, incomming.LocalID) { //Denne må byttes til IP når vi kjører på forskjellige
+					live = append(live, incomming.LocalIP)
+					ch.onlineElevs <- live
+					if len(live) == numPeers {
+						go func() { ch.online <- true }()
+					}
+				}
+
+			case <-ch.online:
+				fmt.Println("We are online")
+
+			Finn ut om vi er online ved å sjekke IP på mottatte meldinger. Hvis vi har to
+			forskjellige IP-er så er vi online, og da er den med lavest IP master
 	*/
 
 }
