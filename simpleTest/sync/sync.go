@@ -54,7 +54,7 @@ func Sync(id string, ch SyncChns) {
 		msg := Message{elev, currentMsgID, false, localIP, id}
 		for {
 			ch.SendChn <- msg
-			msgTimer.Reset(100 * time.Millisecond)
+			msgTimer.Reset(1 * time.Millisecond)
 			time.Sleep(1 * time.Second)
 			/*
 				go func() {
@@ -106,12 +106,11 @@ func Sync(id string, ch SyncChns) {
 				}
 				if !incomming.Receipt {
 					// Hvis det ikke er en kvittering, skal vi svare med kvittering
-					//fmt.Println("Received message from %d \n", incomming.LocalID)
 					msg := Message{elev, incomming.MsgId, true, localIP, id}
-					//sender ut fem kvitteringer på fem millisekunder
+					//sender ut fem kvitteringer på femti millisekunder
 					for i := 0; i < 5; i++ {
 						ch.SendChn <- msg
-						time.Sleep(1 * time.Millisecond)
+						time.Sleep(10 * time.Millisecond)
 					}
 				} else { // Hvis det er en kvittering
 					if incomming.MsgId == currentMsgID {
