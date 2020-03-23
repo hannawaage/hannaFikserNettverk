@@ -9,9 +9,10 @@ import (
 
 func main() {
 	syncChns := sync.SyncChns{
-		SendChn: make(chan sync.Message),
-		RecChn:  make(chan sync.Message),
-		Online:  make(chan bool),
+		SendChn:   make(chan sync.Message),
+		RecChn:    make(chan sync.Message),
+		Online:    make(chan bool),
+		IAmMaster: make(chan bool),
 	}
 
 	var id string

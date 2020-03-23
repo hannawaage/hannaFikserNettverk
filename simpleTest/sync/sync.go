@@ -23,9 +23,10 @@ type Message struct {
 }
 
 type SyncChns struct {
-	SendChn chan Message
-	RecChn  chan Message
-	Online  chan bool
+	SendChn   chan Message
+	RecChn    chan Message
+	Online    chan bool
+	IAmMaster chan bool
 }
 
 func Sync(id string, ch SyncChns) {
@@ -33,8 +34,6 @@ func Sync(id string, ch SyncChns) {
 	elev := Elevator{3, 0}
 
 	var (
-		iAmMaster bool = true
-		//online    bool //boolean initiates to false
 		onlineIPs       []string
 		receivedReceipt []string
 		currentMsgID    int
@@ -82,9 +81,10 @@ func Sync(id string, ch SyncChns) {
 						for i := 0; i < numPeers; i++ {
 							theID, _ := strconv.Atoi(onlineIPs[i])
 							if idDig > theID {
-								iAmMaster = false
+								ch.IAmMaster <- false
 								break
 							}
+							ch.IAmMaster <- true
 						}
 						/*
 							Dette er ved diff på IP:
@@ -98,11 +98,6 @@ func Sync(id string, ch SyncChns) {
 								}
 							}
 						*/
-						if iAmMaster {
-							fmt.Println("I am master")
-						} else {
-							fmt.Println("I am backup")
-						}
 					}
 				}
 				if !incomming.Receipt {
@@ -140,7 +135,8 @@ func Sync(id string, ch SyncChns) {
 
 func OrdersDist(ch SyncChns) {
 	var (
-		online bool //initiates to false
+		online    bool //initiates to false
+		iAmMaster bool = true
 	)
 	go func() {
 		for {
@@ -153,12 +149,24 @@ func OrdersDist(ch SyncChns) {
 					online = false
 					fmt.Println("Boo, we are offline.")
 				}
+			case b := <-ch.IAmMaster:
+				if b {
+					iAmMaster = true
+				} else {
+					iAmMaster = false
+				}
 			}
+
 		}
 	}()
 	for {
 		if online {
 			fmt.Println("Online")
+			if iAmMaster {
+				fmt.Println(".. and I am master")
+			} else {
+				fmt.Println(".. and I am backup")
+			}
 			time.Sleep(5 * time.Second)
 		}
 	}
