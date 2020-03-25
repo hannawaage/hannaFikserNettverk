@@ -56,14 +56,6 @@ func Sync(id string, ch SyncChns) {
 			ch.SendChn <- msg
 			msgTimer.Reset(800 * time.Millisecond)
 			time.Sleep(1 * time.Second)
-			/*
-				go func() {
-					msgRec := <-ch.timerConf
-					if msgRec == randNr {
-						msgTimer.Stop()
-					}
-				}()
-			*/
 		}
 	}()
 
