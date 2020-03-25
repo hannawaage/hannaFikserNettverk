@@ -50,9 +50,9 @@ func Sync(id string, ch SyncChns) {
 	msgTimer.Stop()
 
 	go func() {
-		currentMsgID = rand.Intn(256)
-		msg := Message{elev, currentMsgID, false, localIP, id}
 		for {
+			currentMsgID = rand.Intn(256)
+			msg := Message{elev, currentMsgID, false, localIP, id}
 			ch.SendChn <- msg
 			msgTimer.Reset(800 * time.Millisecond)
 			time.Sleep(1 * time.Second)
